@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E8AD6429-5CF2-4D60-AC7C-65D1C7738032}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>web_app.py</StartupFile>
+    <SearchPath>.</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>TabularDB32</Name>
+    <RootNamespace>TabularDB32</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <TestFramework>unittest</TestFramework>
+    <UnitTestRootDirectory>.</UnitTestRootDirectory>
+    <UnitTestPattern>test_*.py</UnitTestPattern>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="core\__init__.py" />
+    <Compile Include="core\data_types.py" />
+    <Compile Include="core\manager.py" />
+    <Compile Include="core\models.py" />
+    <Compile Include="core\storage.py" />
+    <Compile Include="desktop.py" />
+    <Content Include="evidence\tests.txt" />
+    <Content Include="samples\demo.json" />
+    <Content Include="samples\invalid.json" />
+    <Content Include="static\style.css" />
+    <Content Include="templates\index.html" />
+    <Compile Include="tests\__init__.py" />
+    <Compile Include="tests\test_core.py" />
+    <Compile Include="web_app.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="core\" />
+    <Folder Include="evidence\" />
+    <Folder Include="samples\" />
+    <Folder Include="static\" />
+    <Folder Include="templates\" />
+    <Folder Include="tests\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

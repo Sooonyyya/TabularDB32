@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "database": {
+    "name": "Навчальна база",
+    "tables": [
+      {
+        "name": "Група А",
+        "columns": [
+          {
+            "name": "id",
+            "kind": "integer",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "rating",
+            "kind": "real",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "group",
+            "kind": "char",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "name",
+            "kind": "string",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "range",
+            "kind": "charInvl",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "code",
+            "kind": "string(charInvl)",
+            "lower": "a",
+            "upper": "z"
+          }
+        ],
+        "rows": [
+          {
+            "values": [
+              "1",
+              "4.5",
+              "А",
+              "Олена",
+              "[a;z]",
+              "anna"
+            ]
+          },
+          {
+            "values": [
+              "2",
+              "4.0",
+              "Б",
+              "Іван",
+              "[b;m]",
+              "ivan"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Група Б",
+        "columns": [
+          {
+            "name": "id",
+            "kind": "integer",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "rating",
+            "kind": "real",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "group",
+            "kind": "char",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "name",
+            "kind": "string",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "range",
+            "kind": "charInvl",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "code",
+            "kind": "string(charInvl)",
+            "lower": "a",
+            "upper": "z"
+          }
+        ],
+        "rows": [
+          {
+            "values": [
+              "2",
+              "4.0",
+              "Б",
+              "Іван",
+              "[b;m]",
+              "ivan"
+            ]
+          },
+          {
+            "values": [
+              "3",
+              "5.0",
+              "В",
+              "Марія",
+              "[a;f]",
+              "maria"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Усі записи",
+        "columns": [
+          {
+            "name": "id",
+            "kind": "integer",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "rating",
+            "kind": "real",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "group",
+            "kind": "char",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "name",
+            "kind": "string",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "range",
+            "kind": "charInvl",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "code",
+            "kind": "string(charInvl)",
+            "lower": "a",
+            "upper": "z"
+          }
+        ],
+        "rows": [
+          {
+            "values": [
+              "1",
+              "4.5",
+              "А",
+              "Олена",
+              "[a;z]",
+              "anna"
+            ]
+          },
+          {
+            "values": [
+              "2",
+              "4.0",
+              "Б",
+              "Іван",
+              "[b;m]",
+              "ivan"
+            ]
+          },
+          {
+            "values": [
+              "3",
+              "5.0",
+              "В",
+              "Марія",
+              "[a;f]",
+              "maria"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

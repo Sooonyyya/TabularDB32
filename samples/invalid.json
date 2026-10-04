@@ -1,0 +1,1 @@
+{"version":1,"database":{"name":"Помилка","tables":[{"name":"T","columns":[{"name":"id","kind":"integer","lower":null,"upper":null}],"rows":[{"values":["не число"]}]}]}}

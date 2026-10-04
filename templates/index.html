@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Таблична база • Варіант 3–2</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head>
+<body>
+{% macro hidden(op, table_name=none) -%}
+<input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="op" value="{{ op }}">
+{% if table_name is not none %}<input type="hidden" name="table" value="{{ table_name }}">{% endif %}
+{%- endmacro %}
+<header><div><span class="eyebrow">СИСТЕМА ТИПУ 1 · ВАРІАНТ 3–2</span><h1>{{ db.name }}</h1><p>Таблиці, типи даних та об’єднання без повторів</p></div><a class="button" href="{{ url_for('export') }}">Завантажити JSON</a></header>
+<main>
+{% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="alert">{{ message }}</div>{% endfor %}
+<details class="panel"><summary>Створення бази та імпорт із диска</summary><div class="two">
+<form method="post" action="/action" onsubmit="return confirm('Замінити поточну базу? Спочатку завантажте JSON, якщо хочете її зберегти.')">{{ hidden('new_db') }}<label>Назва нової бази<input name="name" required></label><button>Створити базу</button></form>
+<form method="post" action="/action" enctype="multipart/form-data" onsubmit="return confirm('Замінити поточну базу даними файла?')">{{ hidden('import') }}<label>Файл бази UTF-8<input type="file" name="file" accept=".json" required></label><button>Імпортувати JSON</button></form></div></details>
+<div class="layout"><aside class="panel"><h2>Таблиці <span class="count">{{ db.tables|length }}</span></h2>
+<nav>{% for t in db.tables %}<a class="{% if table and t.name == table.name %}active{% endif %}" href="{{ url_for('index',table=t.name) }}">{{ t.name }} <small>{{ t.rows|length }}</small></a>{% else %}<p>Створіть першу таблицю.</p>{% endfor %}</nav>
+<form method="post" action="/action">{{ hidden('create_table') }}<label>Нова таблиця<input name="name" required placeholder="Наприклад, Група А"></label><button>Створити таблицю</button></form>
+<details open><summary>Об’єднання таблиць</summary><form method="post" action="/action">{{ hidden('union') }}
+<label>Перша таблиця<select name="first">{% for t in db.tables %}<option>{{ t.name }}</option>{% endfor %}</select></label>
+<label>Друга таблиця<select name="second">{% for t in db.tables %}<option {% if loop.last %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select></label>
+<label>Назва результату<input name="result" required placeholder="Об’єднання"></label><button {% if not db.tables %}disabled{% endif %}>Об’єднати</button></form></details></aside>
+<section>
+{% if table %}
+<div class="panel"><div class="section-title"><h2>{{ table.name }} <span class="count">{{ table.rows|length }} рядків</span></h2>
+<form method="post" action="/action" onsubmit="return confirm('Видалити таблицю разом із рядками?')">{{ hidden('delete_table',table.name) }}<button class="danger">Видалити таблицю</button></form></div>
+<div class="table-scroll"><table><thead><tr><th>№</th>{% for c in table.columns %}<th>{{ c.name }}<small>{{ c.kind }}{% if c.lower is not none %} [{{ c.lower }};{{ c.upper }}]{% endif %}</small></th>{% endfor %}<th>Дії</th></tr></thead><tbody>
+{% for row in table.rows %}<tr><td>{{ loop.index }}</td>{% for value in row.values %}<td class="value">{{ value }}</td>{% endfor %}<td class="actions"><a href="{{ url_for('index',table=table.name,edit=loop.index0) }}#row-form">Редагувати</a><form method="post" action="/action" onsubmit="return confirm('Видалити рядок?')">{{ hidden('delete_row',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></td></tr>
+{% else %}<tr><td colspan="{{ table.columns|length + 2 }}">Поки немає рядків. Визначте колонки й додайте дані.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="panel" id="row-form"><h2>{{ 'Редагувати рядок ' ~ (edit[0]+1) if edit else 'Додати рядок' }}</h2>
+{% if table.columns %}<form method="post" action="/action">{{ hidden('edit_row' if edit else 'create_row',table.name) }}{% if edit %}<input type="hidden" name="index" value="{{ edit[0] }}">{% endif %}
+<div class="fields">{% for c in table.columns %}<label>{{ c.label }}<input name="value_{{ loop.index0 }}" value="{{ edit[1].values[loop.index0] if edit else '' }}" {% if c.kind not in ['string','string(charInvl)'] %}required{% endif %}></label>{% endfor %}</div>
+<button>{{ 'Зберегти зміни' if edit else 'Додати рядок' }}</button>{% if edit %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}</form>
+{% else %}<p>Спочатку додайте хоча б одну колонку в розділі схеми.</p>{% endif %}</div>
+<details class="panel" {% if column_edit or not table.columns %}open{% endif %}><summary>Схема таблиці та типи даних</summary>
+<p>charInvl: інтервал [a;z]. Для string(charInvl) задайте межі символів у схемі. Порядок визначається кодами Unicode.</p>
+{% for c in table.columns %}<div class="column-line"><span>{{ c.label }}</span><a href="{{ url_for('index',table=table.name,column=loop.index0) }}#column-form">Змінити</a><form method="post" action="/action" onsubmit="return confirm('Видалити колонку та всі її значення?')">{{ hidden('delete_column',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></div>{% endfor %}
+{% set ce = column_edit[1] if column_edit else none %}
+<form id="column-form" method="post" action="/action">{{ hidden('edit_column' if ce else 'create_column',table.name) }}{% if ce %}<input type="hidden" name="index" value="{{ column_edit[0] }}">{% endif %}
+<h3>{{ 'Редагування колонки' if ce else 'Нова колонка' }}</h3><div class="fields"><label>Назва колонки<input name="name" required value="{{ ce.name if ce else '' }}"></label>
+<label>Тип<select name="kind">{% for kind in types %}<option {% if ce and kind == ce.kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
+<label>Нижня межа для string(charInvl)<input name="lower" value="{{ ce.lower if ce and ce.lower else '' }}"></label>
+<label>Верхня межа для string(charInvl)<input name="upper" value="{{ ce.upper if ce and ce.upper else '' }}"></label>
+{% if not ce %}<label>Значення для наявних рядків<input name="initial"></label>{% endif %}</div>
+<button>{{ 'Оновити колонку' if ce else 'Додати колонку' }}</button>{% if ce %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}</form></details>
+{% else %}<div class="panel empty"><h2>База готова до роботи</h2><p>Створіть таблицю зліва, визначте її колонки та введіть рядки.</p><p>Підтримуються integer, real, char, string, charInvl і string(charInvl).</p></div>{% endif %}
+</section></div></main><footer>Зміни автоматично зберігаються в JSON на сервері. Для копії на своєму пристрої натисніть «Завантажити JSON».</footer>
+</body></html>
