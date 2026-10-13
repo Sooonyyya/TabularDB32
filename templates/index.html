@@ -1,47 +1,187 @@
 <!doctype html>
-<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Таблична база • Варіант 3–2</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Таблична база • Варіант 3–2</title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+</head>
 <body>
-{% macro hidden(op, table_name=none) -%}
-<input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="op" value="{{ op }}">
-{% if table_name is not none %}<input type="hidden" name="table" value="{{ table_name }}">{% endif %}
-{%- endmacro %}
-<header><div><span class="eyebrow">СИСТЕМА ТИПУ 1 · ВАРІАНТ 3–2</span><h1>{{ db.name }}</h1><p>Таблиці, типи даних та об’єднання без повторів</p></div><a class="button" href="{{ url_for('export') }}">Завантажити JSON</a></header>
-<main>
-{% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="alert">{{ message }}</div>{% endfor %}
-<details class="panel"><summary>Створення бази та імпорт із диска</summary><div class="two">
-<form method="post" action="/action" onsubmit="return confirm('Замінити поточну базу? Спочатку завантажте JSON, якщо хочете її зберегти.')">{{ hidden('new_db') }}<label>Назва нової бази<input name="name" required></label><button>Створити базу</button></form>
-<form method="post" action="/action" enctype="multipart/form-data" onsubmit="return confirm('Замінити поточну базу даними файла?')">{{ hidden('import') }}<label>Файл бази UTF-8<input type="file" name="file" accept=".json" required></label><button>Імпортувати JSON</button></form></div></details>
-<div class="layout"><aside class="panel"><h2>Таблиці <span class="count">{{ db.tables|length }}</span></h2>
-<nav>{% for t in db.tables %}<a class="{% if table and t.name == table.name %}active{% endif %}" href="{{ url_for('index',table=t.name) }}">{{ t.name }} <small>{{ t.rows|length }}</small></a>{% else %}<p>Створіть першу таблицю.</p>{% endfor %}</nav>
-<form method="post" action="/action">{{ hidden('create_table') }}<label>Нова таблиця<input name="name" required placeholder="Наприклад, Група А"></label><button>Створити таблицю</button></form>
-<details open><summary>Об’єднання таблиць</summary><form method="post" action="/action">{{ hidden('union') }}
-<label>Перша таблиця<select name="first">{% for t in db.tables %}<option>{{ t.name }}</option>{% endfor %}</select></label>
-<label>Друга таблиця<select name="second">{% for t in db.tables %}<option {% if loop.last %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select></label>
-<label>Назва результату<input name="result" required placeholder="Об’єднання"></label><button {% if not db.tables %}disabled{% endif %}>Об’єднати</button></form></details></aside>
-<section>
-{% if table %}
-<div class="panel"><div class="section-title"><h2>{{ table.name }} <span class="count">{{ table.rows|length }} рядків</span></h2>
-<form method="post" action="/action" onsubmit="return confirm('Видалити таблицю разом із рядками?')">{{ hidden('delete_table',table.name) }}<button class="danger">Видалити таблицю</button></form></div>
-<div class="table-scroll"><table><thead><tr><th>№</th>{% for c in table.columns %}<th>{{ c.name }}<small>{{ c.kind }}{% if c.lower is not none %} [{{ c.lower }};{{ c.upper }}]{% endif %}</small></th>{% endfor %}<th>Дії</th></tr></thead><tbody>
-{% for row in table.rows %}<tr><td>{{ loop.index }}</td>{% for value in row.values %}<td class="value">{{ value }}</td>{% endfor %}<td class="actions"><a href="{{ url_for('index',table=table.name,edit=loop.index0) }}#row-form">Редагувати</a><form method="post" action="/action" onsubmit="return confirm('Видалити рядок?')">{{ hidden('delete_row',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></td></tr>
-{% else %}<tr><td colspan="{{ table.columns|length + 2 }}">Поки немає рядків. Визначте колонки й додайте дані.</td></tr>{% endfor %}</tbody></table></div></div>
-<div class="panel" id="row-form"><h2>{{ 'Редагувати рядок ' ~ (edit[0]+1) if edit else 'Додати рядок' }}</h2>
-{% if table.columns %}<form method="post" action="/action">{{ hidden('edit_row' if edit else 'create_row',table.name) }}{% if edit %}<input type="hidden" name="index" value="{{ edit[0] }}">{% endif %}
-<div class="fields">{% for c in table.columns %}<label>{{ c.label }}<input name="value_{{ loop.index0 }}" value="{{ edit[1].values[loop.index0] if edit else '' }}" {% if c.kind not in ['string','string(charInvl)'] %}required{% endif %}></label>{% endfor %}</div>
-<button>{{ 'Зберегти зміни' if edit else 'Додати рядок' }}</button>{% if edit %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}</form>
-{% else %}<p>Спочатку додайте хоча б одну колонку в розділі схеми.</p>{% endif %}</div>
-<details class="panel" {% if column_edit or not table.columns %}open{% endif %}><summary>Схема таблиці та типи даних</summary>
-<p>charInvl: інтервал [a;z]. Для string(charInvl) задайте межі символів у схемі. Порядок визначається кодами Unicode.</p>
-{% for c in table.columns %}<div class="column-line"><span>{{ c.label }}</span><a href="{{ url_for('index',table=table.name,column=loop.index0) }}#column-form">Змінити</a><form method="post" action="/action" onsubmit="return confirm('Видалити колонку та всі її значення?')">{{ hidden('delete_column',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></div>{% endfor %}
-{% set ce = column_edit[1] if column_edit else none %}
-<form id="column-form" method="post" action="/action">{{ hidden('edit_column' if ce else 'create_column',table.name) }}{% if ce %}<input type="hidden" name="index" value="{{ column_edit[0] }}">{% endif %}
-<h3>{{ 'Редагування колонки' if ce else 'Нова колонка' }}</h3><div class="fields"><label>Назва колонки<input name="name" required value="{{ ce.name if ce else '' }}"></label>
-<label>Тип<select name="kind">{% for kind in types %}<option {% if ce and kind == ce.kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
-<label>Нижня межа для string(charInvl)<input name="lower" value="{{ ce.lower if ce and ce.lower else '' }}"></label>
-<label>Верхня межа для string(charInvl)<input name="upper" value="{{ ce.upper if ce and ce.upper else '' }}"></label>
-{% if not ce %}<label>Значення для наявних рядків<input name="initial"></label>{% endif %}</div>
-<button>{{ 'Оновити колонку' if ce else 'Додати колонку' }}</button>{% if ce %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}</form></details>
-{% else %}<div class="panel empty"><h2>База готова до роботи</h2><p>Створіть таблицю зліва, визначте її колонки та введіть рядки.</p><p>Підтримуються integer, real, char, string, charInvl і string(charInvl).</p></div>{% endif %}
-</section></div></main><footer>Зміни автоматично зберігаються в JSON на сервері. Для копії на своєму пристрої натисніть «Завантажити JSON».</footer>
-</body></html>
+    {% macro hidden(op, table_name=none) -%}
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="op" value="{{ op }}">
+    {% if table_name is not none %}<input type="hidden" name="table" value="{{ table_name }}">{% endif %}
+    {%- endmacro %}
+    <header><div><span class="eyebrow">СИСТЕМА ТИПУ 1 · ВАРІАНТ 3–2</span><h1>{{ db.name if db_ready else 'Базу не створено' }}</h1><p>Таблиці, типи даних та об’єднання без повторів</p></div>{% if db_ready %}<a class="button" href="{{ url_for('export') }}">Завантажити JSON</a>{% else %}<span class="button disabled-link">Завантажити JSON</span>{% endif %}</header>
+    <main>
+        {% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="alert">{{ message }}</div>{% endfor %}
+        <details class="panel" {% if not db_ready %}open{% endif %}>
+            <summary>Створення бази та імпорт із диска</summary><div class="two">
+                <form method="post" action="/action" {% if db_ready %}onsubmit="return confirm('Замінити поточну базу? Спочатку завантажте JSON, якщо хочете її зберегти.')" {% endif %}>{{ hidden('new_db') }}<label>Назва нової бази<input name="name" required></label><button>Створити базу</button></form>
+                <form method="post" action="/action" enctype="multipart/form-data" {% if db_ready %}onsubmit="return confirm('Замінити поточну базу даними файла?')" {% endif %}>
+                    {{ hidden('import') }}
+
+                    <div class="file-upload">
+                        <span class="file-upload-title">Файл бази</span>
+                        <div class="file-picker">
+                            <input type="file" id="db-file" name="file" accept=".json" required class="file-native">
+                            <label for="db-file" class="file-button">Оберіть файл</label>
+                            <span id="db-file-name" class="file-name">Файл не вибрано</span>
+                        </div>
+                    </div>
+
+                    <button>Імпортувати JSON</button>
+                </form>
+            </div>
+        </details>
+        <div class="layout">
+            <aside class="panel">
+                <h2>Таблиці <span class="count">{{ db.tables|length if db_ready else 0 }}</span></h2>
+                <nav>{% if not db_ready %}<p>Спочатку створіть або імпортуйте базу.</p>{% else %}{% for t in db.tables %}<a class="{% if table and t.name == table.name %}active{% endif %}" href="{{ url_for('index',table=t.name) }}">{{ t.name }} <small>{{ t.rows|length }}</small></a>{% else %}<p>Створіть першу таблицю.</p>{% endfor %}{% endif %}</nav>
+                <form method="post" action="/action">{{ hidden('create_table') }}<label>Нова таблиця<input name="name" required placeholder="Наприклад, Група А" {% if not db_ready %}disabled{% endif %}></label><button {% if not db_ready %}disabled{% endif %}>Створити таблицю</button></form>
+                <details open>
+                    <summary>Об’єднання таблиць</summary><form method="post" action="/action">
+                        {{ hidden('union') }}
+                        <label>Перша таблиця<select name="first" {% if not db_ready %}disabled{% endif %}>{% if db_ready %}{% for t in db.tables %}<option>{{ t.name }}</option>{% endfor %}{% endif %}</select></label>
+                        <label>Друга таблиця<select name="second" {% if not db_ready %}disabled{% endif %}>{% if db_ready %}{% for t in db.tables %}<option {% if loop.last %}selected{% endif %}>{{ t.name }}</option>{% endfor %}{% endif %}</select></label>
+                        <label>Назва результату<input name="result" required placeholder="Об’єднання" {% if not db_ready %}disabled{% endif %}></label><button {% if not db_ready or (db_ready and not db.tables) %}disabled{% endif %}>Об’єднати</button>
+                    </form>
+                </details>
+            </aside>
+            <section>
+                {% if table %}
+                <div class="panel">
+                    <div class="section-title">
+                        <h2>{{ table.name }} <span class="count">{{ table.rows|length }} рядків</span></h2>
+                        <form method="post" action="/action" onsubmit="return confirm('Видалити таблицю разом із рядками?')">{{ hidden('delete_table',table.name) }}<button class="danger">Видалити таблицю</button></form>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th>№</th>{% for c in table.columns %}<th>{{ c.name }}<small>{{ c.kind }}{% if c.kind in ['charInvl','string(charInvl)'] %} [{{ c.lower }};{{ c.upper }}]{% endif %}</small></th>{% endfor %}<th>Дії</th></tr></thead>
+                            <tbody>
+                                {% for row in table.rows %}
+                                <tr><td>{{ loop.index }}</td>{% for value in row.values %}<td class="value">{{ value }}</td>{% endfor %}<td class="actions"><a href="{{ url_for('index',table=table.name,edit=loop.index0) }}#row-form">Редагувати</a><form method="post" action="/action" onsubmit="return confirm('Видалити рядок?')">{{ hidden('delete_row',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></td></tr>
+                                {% else %}
+                                <tr><td colspan="{{ table.columns|length + 2 }}">Поки немає рядків. Визначте колонки й додайте дані.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel" id="row-form">
+                    <h2>{{ 'Редагувати рядок ' ~ (edit[0]+1) if edit else 'Додати рядок' }}</h2>
+                    {% if table.columns %}<form method="post" action="/action">
+                        {{ hidden('edit_row' if edit else 'create_row',table.name) }}{% if edit %}<input type="hidden" name="index" value="{{ edit[0] }}">{% endif %}
+                        <div class="fields">{% for c in table.columns %}<label>{{ c.label }}<input name="value_{{ loop.index0 }}" value="{{ edit[1].values[loop.index0] if edit else '' }}" {% if c.kind not in ['string','string(charInvl)'] %}required{% endif %}></label>{% endfor %}</div>
+                        <button>{{ 'Зберегти зміни' if edit else 'Додати рядок' }}</button>{% if edit %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}
+                    </form>
+                    {% else %}<p>Спочатку додайте хоча б одну колонку в розділі схеми.</p>{% endif %}
+                </div>
+                <details class="panel" {% if column_edit or not table.columns %}open{% endif %}>
+                    <summary>Схема таблиці та типи даних</summary>
+                    <p>Для charInvl і string(charInvl) межі задаються в схемі колонки. charInvl зберігає один символ із цього інтервалу, а string(charInvl) — рядок, у якому кожен символ має належати інтервалу.</p>
+                    {% for c in table.columns %}<div class="column-line"><span>{{ c.label }}</span><a href="{{ url_for('index',table=table.name,column=loop.index0) }}#column-form">Змінити</a><form method="post" action="/action" onsubmit="return confirm('Видалити колонку та всі її значення?')">{{ hidden('delete_column',table.name) }}<input type="hidden" name="index" value="{{ loop.index0 }}"><button class="link danger">Видалити</button></form></div>{% endfor %}
+                    {% set ce = column_edit[1] if column_edit else none %}
+                    <form id="column-form" method="post" action="/action">
+                        {{ hidden('edit_column' if ce else 'create_column',table.name) }}{% if ce %}<input type="hidden" name="index" value="{{ column_edit[0] }}">{% endif %}
+                        <h3>{{ 'Редагування колонки' if ce else 'Нова колонка' }}</h3><div class="fields">
+    <label>Назва колонки<input name="name" required value="{{ ce.name if ce else '' }}"></label>
+    <label>Тип<select name="kind" id="column-kind">{% for kind in types %}<option {% if ce and kind==ce.kind %}selected{% endif %}>{{ kind }}</option>{% endfor %}</select></label>
+    <label>Нижня межа для charInvl / string(charInvl)<input name="lower" id="column-lower" value="{{ ce.lower if ce and ce.lower else '' }}" {% if not ce or ce.kind not in ['charInvl','string(charInvl)'] %}disabled{% else %}required{% endif %}></label>
+    <label>Верхня межа для charInvl / string(charInvl)<input name="upper" id="column-upper" value="{{ ce.upper if ce and ce.upper else '' }}" {% if not ce or ce.kind not in ['charInvl','string(charInvl)'] %}disabled{% else %}required{% endif %}></label>
+    {% if not ce %}
+    <label>
+        Значення для наявних рядків
+        <input name="initial" {% if not table.rows %}disabled{% endif %}>
+    </label>
+    {% endif %}
+</div>
+                        <button>{{ 'Оновити колонку' if ce else 'Додати колонку' }}</button>{% if ce %}<a href="{{ url_for('index',table=table.name) }}">Скасувати</a>{% endif %}
+                    </form>
+                </details>
+                {% else %}<div class="panel empty">{% if db_ready %}<h2>База готова до роботи</h2><p>Створіть таблицю зліва, визначте її колонки та введіть рядки.</p><p>Підтримуються integer, real, char, string, charInvl і string(charInvl).</p>{% else %}<h2>Спочатку створіть або імпортуйте базу</h2><p>До цього моменту створення таблиць, колонок, рядків та операція об’єднання недоступні.</p>{% endif %}</div>{% endif %}
+            </section>
+        </div>
+    </main><footer>{% if db_ready %}Зміни автоматично зберігаються в JSON на сервері. Для копії на своєму пристрої натисніть «Завантажити JSON».{% else %}Спочатку створіть нову базу або імпортуйте JSON-файл.{% endif %}</footer>
+
+    <script>
+        (function () {
+            const kind = document.getElementById('column-kind');
+            const lower = document.getElementById('column-lower');
+            const upper = document.getElementById('column-upper');
+            if (!kind || !lower || !upper) return;
+
+            function updateBounds() {
+                const active = kind.value === 'charInvl' || kind.value === 'string(charInvl)';
+                lower.disabled = !active;
+                upper.disabled = !active;
+                lower.required = active;
+                upper.required = active;
+            }
+
+            kind.addEventListener('change', updateBounds);
+            updateBounds();
+        })();
+    </script>
+
+
+    <script>
+        (function () {
+            function ukrainianMessage(el) {
+                const v = el.validity;
+                if (v.valueMissing) {
+                    if (el.type === 'file') return 'Оберіть файл.';
+                    if (el.tagName === 'SELECT') return 'Оберіть значення зі списку.';
+                    return 'Заповніть це поле.';
+                }
+                if (v.typeMismatch) return 'Введіть коректне значення.';
+                if (v.patternMismatch) return 'Значення має неправильний формат.';
+                if (v.tooShort) return `Введіть щонайменше ${el.minLength} символів.`;
+                if (v.tooLong) return `Введіть не більше ${el.maxLength} символів.`;
+                if (v.rangeUnderflow) return `Значення має бути не менше ${el.min}.`;
+                if (v.rangeOverflow) return `Значення має бути не більше ${el.max}.`;
+                if (v.stepMismatch) return 'Введіть допустиме значення.';
+                if (v.badInput) return 'Введіть коректне значення.';
+                return 'Перевірте правильність введених даних.';
+            }
+
+            document.addEventListener('invalid', function (event) {
+                const el = event.target;
+                if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) return;
+                el.setCustomValidity('');
+                if (!el.validity.valid) {
+                    el.setCustomValidity(ukrainianMessage(el));
+                }
+            }, true);
+
+            document.addEventListener('input', function (event) {
+                const el = event.target;
+                if (el && typeof el.setCustomValidity === 'function') {
+                    el.setCustomValidity('');
+                }
+            }, true);
+
+            document.addEventListener('change', function (event) {
+                const el = event.target;
+                if (el && typeof el.setCustomValidity === 'function') {
+                    el.setCustomValidity('');
+                }
+            }, true);
+        })();
+    </script>
+    <script>
+        (function () {
+            const fileInput = document.getElementById('db-file');
+            const fileName = document.getElementById('db-file-name');
+
+            if (!fileInput || !fileName) return;
+
+            fileInput.addEventListener('change', function () {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    fileName.textContent = fileInput.files[0].name;
+                } else {
+                    fileName.textContent = 'Файл не вибрано';
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

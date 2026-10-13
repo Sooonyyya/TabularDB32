@@ -10,18 +10,22 @@ from .data_types import ValidationError
 
 FORMAT_VERSION = 1
 
+
 def dumps(database):
     return json.dumps({'version': FORMAT_VERSION, 'database': asdict(database)},
                       ensure_ascii=False, indent=2, allow_nan=False)
+
 
 def exact_keys(obj, keys):
     if not isinstance(obj, dict) or set(obj) != set(keys):
         raise ValidationError('Некоректні поля структури JSON.')
 
+
 def array(value):
     if not isinstance(value, list):
         raise ValidationError('Очікувався масив JSON.')
     return value
+
 
 def unique_pairs(pairs):
     result = {}
@@ -30,6 +34,7 @@ def unique_pairs(pairs):
             raise ValidationError('Повторюване поле об’єкта JSON.')
         result[key] = value
     return result
+
 
 def loads(text):
     try:
@@ -56,11 +61,13 @@ def loads(text):
             raise
         raise ValidationError(f'Некоректний файл бази: {exc}') from exc
 
+
 def load_database(path):
     try:
         return loads(Path(path).read_text(encoding='utf-8'))
     except UnicodeError as exc:
         raise ValidationError('Файл має бути текстом UTF-8.') from exc
+
 
 def save_database(database, path):
     text = dumps(loads(dumps(database)))

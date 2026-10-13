@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{E8AD6429-5CF2-4D60-AC7C-65D1C7738032}</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>web_app.py</StartupFile>
+    <StartupFile>desktop.py</StartupFile>
     <SearchPath>.</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -32,7 +32,6 @@
     <Compile Include="core\models.py" />
     <Compile Include="core\storage.py" />
     <Compile Include="desktop.py" />
-    <Content Include="evidence\tests.txt" />
     <Content Include="samples\demo.json" />
     <Content Include="samples\invalid.json" />
     <Content Include="static\style.css" />
@@ -43,7 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="core\" />
-    <Folder Include="evidence\" />
     <Folder Include="samples\" />
     <Folder Include="static\" />
     <Folder Include="templates\" />

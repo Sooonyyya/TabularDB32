@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from .data_types import make_type
+from .data_types import make_type, INTERVAL_TYPES
+
 
 @dataclass
 class Column:
@@ -14,18 +15,21 @@ class Column:
 
     @property
     def label(self):
-        suffix = f' [{self.lower};{self.upper}]' if self.kind == 'string(charInvl)' else ''
+        suffix = f' [{self.lower};{self.upper}]' if self.kind in INTERVAL_TYPES else ''
         return f'{self.name}: {self.kind}{suffix}'
+
 
 @dataclass
 class Row:
     values: list[str]
+
 
 @dataclass
 class Table:
     name: str
     columns: list[Column] = field(default_factory=list)
     rows: list[Row] = field(default_factory=list)
+
 
 @dataclass
 class Database:

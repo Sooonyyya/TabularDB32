@@ -2,11 +2,14 @@ from abc import ABC, abstractmethod
 import math
 import re
 
+
 class ValidationError(ValueError):
     pass
 
+
 def scalar(value):
     return isinstance(value, str) and len(value) == 1 and not 0xD800 <= ord(value) <= 0xDFFF
+
 
 class BaseType(ABC):
     @abstractmethod
@@ -27,6 +30,7 @@ class BaseType(ABC):
             raise ValidationError('Недопустимий символ Unicode.')
         return value
 
+
 class IntegerType(BaseType):
     def normalize(self, value):
         value = self.text(value).strip()
@@ -35,6 +39,7 @@ class IntegerType(BaseType):
         sign = '-' if value.startswith('-') else ''
         digits = value.lstrip('+-').lstrip('0') or '0'
         return sign + digits if digits != '0' else '0'
+
 
 class RealType(BaseType):
     def normalize(self, value):
@@ -46,6 +51,7 @@ class RealType(BaseType):
             raise ValidationError('Число має бути скінченним і в межах real.')
         return repr(number if number != 0 else 0.0)
 
+
 class CharType(BaseType):
     def normalize(self, value):
         value = self.text(value)
@@ -53,40 +59,63 @@ class CharType(BaseType):
             raise ValidationError('char має містити рівно один символ Unicode.')
         return value
 
+
 class StringType(BaseType):
     def normalize(self, value):
         return self.text(value)
 
-class CharInvlType(BaseType):
-    def normalize(self, value):
-        value = self.text(value)
-        if len(value) != 5 or value[0] != '[' or value[2] != ';' or value[4] != ']':
-            raise ValidationError('Інтервал записують як [a;z], рівно два символи-межі.')
-        lower, upper = value[1], value[3]
-        if not scalar(lower) or not scalar(upper) or ord(lower) > ord(upper):
-            raise ValidationError('Нижня межа інтервалу не може перевищувати верхню.')
-        return value
 
-class StringCharInvlType(BaseType):
+class _IntervalMixin:
     def __init__(self, lower, upper):
-        if not scalar(lower) or not scalar(upper) or ord(lower) > ord(upper):
-            raise ValidationError('Межі рядкового типу мають бути символами у правильному порядку.')
-        self.lower, self.upper = lower, upper
+        if not scalar(lower) or not scalar(upper):
+            raise ValidationError('Межі інтервалу мають містити рівно по одному символу.')
+        if ord(lower) > ord(upper):
+            raise ValidationError('Нижня межа інтервалу не може перевищувати верхню.')
+        self.lower = lower
+        self.upper = upper
 
+    def in_interval(self, char):
+        return ord(self.lower) <= ord(char) <= ord(self.upper)
+
+
+class CharInvlType(_IntervalMixin, BaseType):
+    """Один символ, що належить заданому в схемі замкненому інтервалу."""
     def normalize(self, value):
         value = self.text(value)
-        if any(not ord(self.lower) <= ord(c) <= ord(self.upper) for c in value):
-            raise ValidationError(f'Кожен символ має належати [{self.lower};{self.upper}].')
+        if not scalar(value):
+            raise ValidationError('charInvl має містити рівно один символ Unicode.')
+        if not self.in_interval(value):
+            raise ValidationError(f'Символ має належати інтервалу [{self.lower};{self.upper}].')
         return value
+
+
+class StringCharInvlType(_IntervalMixin, BaseType):
+    """Рядок, кожен символ якого належить заданому в схемі інтервалу."""
+    def normalize(self, value):
+        value = self.text(value)
+        if any(not self.in_interval(c) for c in value):
+            raise ValidationError(f'Кожен символ має належати інтервалу [{self.lower};{self.upper}].')
+        return value
+
 
 TYPE_NAMES = ('integer', 'real', 'char', 'string', 'charInvl', 'string(charInvl)')
+INTERVAL_TYPES = ('charInvl', 'string(charInvl)')
+
 
 def make_type(kind, lower=None, upper=None):
-    types = dict(zip(TYPE_NAMES[:-1], [IntegerType, RealType, CharType, StringType, CharInvlType]))
+    if kind == 'charInvl':
+        return CharInvlType(lower, upper)
     if kind == 'string(charInvl)':
         return StringCharInvlType(lower, upper)
+
+    types = {
+        'integer': IntegerType,
+        'real': RealType,
+        'char': CharType,
+        'string': StringType,
+    }
     if kind not in types:
         raise ValidationError(f'Невідомий тип: {kind}.')
     if lower is not None or upper is not None:
-        raise ValidationError('Межі схеми задають тільки для string(charInvl).')
+        raise ValidationError('Межі задають тільки для charInvl та string(charInvl).')
     return types[kind]()

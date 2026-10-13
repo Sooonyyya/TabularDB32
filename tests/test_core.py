@@ -32,13 +32,18 @@ class TypeTests(unittest.TestCase):
         for value in ('', '  abc  ', 'рядок\nдва'):
             self.assertEqual(StringType().normalize(value), value)
 
-    def test_interval_closed_and_singleton(self):
-        self.assertTrue(CharInvlType().validation('[a;z]'))
-        self.assertTrue(CharInvlType().validation('[a;a]'))
+    def test_interval_char_endpoints(self):
+        kind = CharInvlType('a', 'm')
+        self.assertTrue(kind.validation('a'))
+        self.assertTrue(kind.validation('m'))
+        self.assertTrue(kind.validation('f'))
 
-    def test_interval_rejects_invalid(self):
-        for value in ('[z;a]', 'a-z', '[ab;z]', ''):
-            self.assertFalse(CharInvlType().validation(value))
+    def test_interval_char_rejects_outside_wrong_length_and_reversed_bounds(self):
+        kind = CharInvlType('a', 'm')
+        for value in ('n', 'A', '', 'ab'):
+            self.assertFalse(kind.validation(value))
+        with self.assertRaises(ValidationError):
+            CharInvlType('z', 'a')
 
     def test_bounded_string_endpoints_and_empty(self):
         kind = StringCharInvlType('a', 'z')
@@ -54,6 +59,7 @@ class TypeTests(unittest.TestCase):
 class ManagerTests(unittest.TestCase):
     def setUp(self):
         self.m = Manager()
+        self.m.create_database('Test')
         for name in ('A', 'B'):
             self.m.create_table(name)
             self.m.create_column(name, Column('id', 'integer'))
@@ -162,10 +168,10 @@ class StorageTests(unittest.TestCase):
         self.m.create_database('Тестова база')
         self.m.create_table('T')
         for column in (Column('i', 'integer'), Column('r', 'real'), Column('c', 'char'),
-                       Column('s', 'string'), Column('interval', 'charInvl'),
+                       Column('s', 'string'), Column('interval_char', 'charInvl', 'a', 'm'),
                        Column('bounded', 'string(charInvl)', 'a', 'z')):
             self.m.create_column('T', column)
-        self.m.create_row('T', ['01', '1e0', 'ї', 'текст', '[a;z]', 'abc'])
+        self.m.create_row('T', ['01', '1e0', 'ї', 'текст', 'm', 'abc'])
 
     def test_roundtrip_all_six_types(self):
         with TemporaryDirectory() as directory:

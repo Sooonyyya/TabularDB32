@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "database": {
+    "name": "Університет",
+    "tables": [
+      {
+        "name": "Студенти",
+        "columns": [
+          {
+            "name": "id",
+            "kind": "integer",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "average_score",
+            "kind": "real",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "group_letter",
+            "kind": "char",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "full_name",
+            "kind": "string",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "allowed_range",
+            "kind": "charInvl",
+            "lower": null,
+            "upper": null
+          },
+          {
+            "name": "login",
+            "kind": "string(charInvl)",
+            "lower": "a",
+            "upper": "m"
+          }
+        ],
+        "rows": [
+          {
+            "values": [
+              "1",
+              "4.5",
+              "A",
+              "Olena",
+              "[a;z]",
+              "amma"
+            ]
+          },
+          {
+            "values": [
+              "2",
+              "4.5",
+              "A",
+              "Olena",
+              "[a;z]",
+              "amma"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

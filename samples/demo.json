@@ -31,10 +31,10 @@
             "upper": null
           },
           {
-            "name": "range",
+            "name": "interval_char",
             "kind": "charInvl",
-            "lower": null,
-            "upper": null
+            "lower": "a",
+            "upper": "z"
           },
           {
             "name": "code",
@@ -50,7 +50,7 @@
               "4.5",
               "А",
               "Олена",
-              "[a;z]",
+              "a",
               "anna"
             ]
           },
@@ -60,7 +60,7 @@
               "4.0",
               "Б",
               "Іван",
-              "[b;m]",
+              "b",
               "ivan"
             ]
           }
@@ -94,10 +94,10 @@
             "upper": null
           },
           {
-            "name": "range",
+            "name": "interval_char",
             "kind": "charInvl",
-            "lower": null,
-            "upper": null
+            "lower": "a",
+            "upper": "z"
           },
           {
             "name": "code",
@@ -113,7 +113,7 @@
               "4.0",
               "Б",
               "Іван",
-              "[b;m]",
+              "b",
               "ivan"
             ]
           },
@@ -123,7 +123,7 @@
               "5.0",
               "В",
               "Марія",
-              "[a;f]",
+              "a",
               "maria"
             ]
           }

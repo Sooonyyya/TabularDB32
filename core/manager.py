@@ -3,9 +3,16 @@ from copy import deepcopy
 from .models import Database, Table, Column, Row
 from .data_types import ValidationError
 
+
 class Manager:
     def __init__(self, database=None):
-        self.db = database or Database('Нова база')
+        # До явного створення або завантаження бази активної БД немає.
+        self.db = database
+
+    def require_database(self):
+        if self.db is None:
+            raise ValidationError('Спочатку створіть або завантажте базу даних.')
+        return self.db
 
     @staticmethod
     def name(value):
@@ -25,25 +32,29 @@ class Manager:
         return self.db
 
     def get_table(self, name):
-        for table in self.db.tables:
+        db = self.require_database()
+        for table in db.tables:
             if table.name == name:
                 return table
         raise ValidationError('Таблицю не знайдено.')
 
     def create_table(self, name):
+        db = self.require_database()
         name = self.name(name)
-        if any(t.name.casefold() == name.casefold() for t in self.db.tables):
+        if any(t.name.casefold() == name.casefold() for t in db.tables):
             raise ValidationError('Таблиця з такою назвою вже існує.')
         table = Table(name)
-        self.db.tables.append(table)
+        db.tables.append(table)
         return table
 
     def delete_table(self, name):
-        self.db.tables.remove(self.get_table(name))
+        db = self.require_database()
+        db.tables.remove(self.get_table(name))
 
     def checked_column(self, table, column, ignore=None):
         column = deepcopy(column)
         column.name = self.name(column.name)
+        # Створення column_type одночасно перевіряє тип і параметри меж.
         column.column_type
         if any(i != ignore and c.name.casefold() == column.name.casefold()
                for i, c in enumerate(table.columns)):
@@ -62,6 +73,8 @@ class Manager:
         table = self.get_table(name)
         self.index(index, len(table.columns))
         column = self.checked_column(table, column, index)
+        # Спочатку перевіряємо всі наявні значення новим типом.
+        # Тільки після успіху змінюємо схему та рядки.
         values = [column.column_type.normalize(row.values[index]) for row in table.rows]
         table.columns[index] = column
         for row, value in zip(table.rows, values):
@@ -121,7 +134,8 @@ class Manager:
         result_name = self.name(result_name)
         if not self.are_tables_compatible(first, second):
             raise ValidationError('Несумісні схеми: назви, порядок, типи та межі колонок мають збігатися.')
-        if any(t.name.casefold() == result_name.casefold() for t in self.db.tables):
+        db = self.require_database()
+        if any(t.name.casefold() == result_name.casefold() for t in db.tables):
             raise ValidationError('Назва результату вже використовується.')
         result = Table(result_name, deepcopy(first.columns))
         seen = set()
@@ -132,7 +146,7 @@ class Manager:
                 if key not in seen:
                     seen.add(key)
                     result.rows.append(Row(normalized))
-        self.db.tables.append(result)
+        db.tables.append(result)
         return result
 
     def load_database(self, path):
@@ -143,4 +157,4 @@ class Manager:
 
     def save_database(self, path):
         from .storage import save_database
-        save_database(self.db, path)
+        save_database(self.require_database(), path)
